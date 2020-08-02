@@ -1,7 +1,7 @@
 package com.fr.matrax.game;
 
 import com.fr.matrax.game.level.MainMenuLevel;
-import com.fr.matrax.game.level.SelectionLevel;
+import com.fr.matrax.game.level.LocalLevel;
 import com.fr.matrax.game.level.BattleLevel;
 import com.fr.matrax.mtxengine.engine.MtxEngine;
 
@@ -10,38 +10,29 @@ public class Game extends MtxEngine
 	
 	private static Game game;
 	private static MainMenuLevel mainMenuLevel;
-	private static SelectionLevel selectionLevel;
+	private static LocalLevel localLevel;
 	private static BattleLevel battleLevel;
 	
 	public static void main(String[] args) 
 	{
 		game = new Game();
+		
 		mainMenuLevel = new MainMenuLevel();
 		battleLevel = new BattleLevel();
-		selectionLevel = new SelectionLevel();
+		localLevel = new LocalLevel();
 		
+		game.getRenderer().setVerticalSynchronisation(true);
 		game.start(mainMenuLevel);
-	}
-	
-	public static MainMenuLevel getMainMenu() 
-	{
-		return mainMenuLevel;
-	}
-	
-	public static SelectionLevel getSelectionLevel() 
-	{
-		return selectionLevel;
-	}
-	
-	public static BattleLevel getBattleLevel() 
-	{
-		return battleLevel;
 	}
 	
 	@Override
 	public void OnUpdate() 
 	{
-		this.getWindow().setTitle("SlimeVersus FPS: " + this.getFramesPerSecond());
+		this.getWindow().setTitle("SlimeVersus FPS: " + this.getFramesPerSecond() 
+								+ " VRAM: " + this.getMemoryManager().getGpuUsedMemory() 
+								+ " / " + this.getMemoryManager().getGpuTotalMemory()
+								+ " RAM: " + this.getMemoryManager().getUsedMemory()
+								+ " / " + this.getMemoryManager().getTotalMemory());
 	}
 
 	@Override
@@ -54,6 +45,21 @@ public class Game extends MtxEngine
 	public void OnTerminate() 
 	{
 		
+	}
+	
+	public static MainMenuLevel getMainMenu() 
+	{
+		return mainMenuLevel;
+	}
+	
+	public static LocalLevel getSelectionLevel() 
+	{
+		return localLevel;
+	}
+	
+	public static BattleLevel getBattleLevel() 
+	{
+		return battleLevel;
 	}
 
 }

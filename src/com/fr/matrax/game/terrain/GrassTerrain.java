@@ -12,7 +12,7 @@ public class GrassTerrain extends MtxSprite
 	{
 		super(name, position, dimension, texture);
 		this.getPhysicBody().getCollider().setCollidable(true);
-		this.getPhysicBody().setStaticBody(true);
+		this.getPhysicBody().getCollider().setStaticBody(true);
 	}
 
 }

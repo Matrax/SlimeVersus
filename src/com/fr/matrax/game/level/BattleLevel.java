@@ -3,48 +3,72 @@ package com.fr.matrax.game.level;
 import org.lwjgl.glfw.GLFW;
 
 import com.fr.matrax.game.entities.Player;
-import com.fr.matrax.game.entities.SlimeBall;
+import com.fr.matrax.game.gui.SlimeFont;
 import com.fr.matrax.game.terrain.GrassTerrain;
-import com.fr.matrax.mtxengine.engine.MtxEngine;
 import com.fr.matrax.mtxengine.events.MtxLevelEvent;
-import com.fr.matrax.mtxengine.gui.MtxSpriteComponent;
 import com.fr.matrax.mtxengine.level.MtxLevel;
 import com.fr.matrax.mtxengine.maths.Dimension2f;
 import com.fr.matrax.mtxengine.maths.Vector2f;
+import com.fr.matrax.mtxengine.objects.MtxText;
+import com.fr.matrax.mtxengine.textures.MtxBitmap;
 import com.fr.matrax.mtxengine.textures.MtxTexture;
 
 public class BattleLevel extends MtxLevel implements MtxLevelEvent
 {
 	
-	private Player player;
+	private Player firstPlayer;
+	private Player secondPlayer;
+	
+	private MtxText firstPlayerScoreText;
+	private MtxText secondPlayerScoreText;
 	
 	private GrassTerrain grassTerrain;
 	
-	private MtxSpriteComponent font;
+	private SlimeFont font;
 	
+	private MtxBitmap defaultBitmap;
 	private MtxTexture playerTexture;
 	private MtxTexture grassTexture;
 	private MtxTexture fontTexture;
 	private MtxTexture slimeBallTexture;
 	
-	private float shootTimer;
+	private int firstPlayerScore;
+	private int secondPlayerScore;
 	
 	public BattleLevel() 
 	{
+		super(1000, 50, 50, 50, 50, 50);
+		
 		//Textures
+		this.defaultBitmap = new MtxBitmap("DefaultBitmap", "DefaultBitmap.png", 16, 16);
 		this.playerTexture = new MtxTexture("PlayerTexture", "Player.png");
 		this.grassTexture = new MtxTexture("GrassTexture", "GrassTerrain.png");
 		this.fontTexture = new MtxTexture("GreenSlimeBackground", "GreenSlimeBackground.png");
 		this.slimeBallTexture = new MtxTexture("SlimeBall", "SlimeBall.png");
 		
+		//Text
+		this.firstPlayerScoreText = new MtxText("FirstPlayerScoreText", "0", new Vector2f(-5f, 0), new Dimension2f(2, 1), this.defaultBitmap);
+		this.secondPlayerScoreText = new MtxText("SecondPlayerScoreText", "0", new Vector2f(5f, 0), new Dimension2f(2, 1), this.defaultBitmap);
+		
 		//Player
-		this.player = new Player("Player", new Vector2f(-8, 0), new Dimension2f(2, 2), this.playerTexture);
+		this.firstPlayer = new Player("FirstPlayer", new Vector2f(-8, 0), new Dimension2f(1, 1), this.playerTexture);
+		this.firstPlayer.setJumpKey(GLFW.GLFW_KEY_W);
+		this.firstPlayer.setShootKey(GLFW.GLFW_KEY_SPACE);
+		this.firstPlayer.setLeftKey(GLFW.GLFW_KEY_A);
+		this.firstPlayer.setRightKey(GLFW.GLFW_KEY_D);
+		
+		this.secondPlayer = new Player("SecondPlayer", new Vector2f(8, 0), new Dimension2f(1, 1), this.playerTexture);
+		this.secondPlayer.setJumpKey(GLFW.GLFW_KEY_UP);
+		this.secondPlayer.setShootKey(GLFW.GLFW_KEY_KP_0);
+		this.secondPlayer.setLeftKey(GLFW.GLFW_KEY_LEFT);
+		this.secondPlayer.setRightKey(GLFW.GLFW_KEY_RIGHT);
+		this.secondPlayer.setXInverted(true);
 		
 		//Terrain
-		this.grassTerrain = new GrassTerrain("GrassTerrain", new Vector2f(0, -5), new Dimension2f(20, 3), this.grassTexture);
+		this.grassTerrain = new GrassTerrain("GrassTerrain", new Vector2f(0, -5), new Dimension2f(23, 3), this.grassTexture);
 		
 		//Font
-		this.font = new MtxSpriteComponent("Font", new Vector2f(0, 0), new Dimension2f(50, 30), this.fontTexture);
+		this.font = new SlimeFont(new Vector2f(0, 0), new Dimension2f(50, 30), this.fontTexture);
 		
 		//Event
 		this.addEvent(this);
@@ -62,55 +86,49 @@ public class BattleLevel extends MtxLevel implements MtxLevelEvent
 		
 		this.addComponent(this.font);
 		this.addObject(this.grassTerrain);
-		this.addObject(this.player);
-	}
-
-	@Override
-	public void OnUnload(MtxLevel level) 
-	{
-		
+		this.addObject(this.firstPlayer);
+		this.addObject(this.secondPlayer);
 	}
 
 	@Override
 	public void OnUpdate(MtxLevel level) 
 	{
-		this.shootTimer += 16;
-		boolean moved = false;
-		float speed = 0.2f;
-		float jumpSpeed = 5f;
+		if(this.firstPlayer.getPosition().getY() < -15) this.firstPlayer.die();
+		if(this.secondPlayer.getPosition().getY() < -15) this.secondPlayer.die();
 		
-		if(MtxEngine.getEngine().getKeyboard().keyPressed(GLFW.GLFW_KEY_W) && this.player.getPhysicBody().getCollider().isAbove())
+		if(this.firstPlayer.isDead())
 		{
-			this.player.getPhysicBody().addForce(0, jumpSpeed);
-			this.player.getAnimationList().get(0).setRunning(false);
-			moved = true;
+			this.secondPlayerScore++;
+			this.secondPlayerScoreText.setText(this.secondPlayerScore + "");
+			this.secondPlayer.heal();
+			this.firstPlayer.resurect();
+			this.newBattle();
+		} else if(this.secondPlayer.isDead()) {
+			this.firstPlayerScore++;
+			this.firstPlayerScoreText.setText(this.firstPlayerScore + "");
+			this.firstPlayer.heal();
+			this.secondPlayer.resurect();
+			this.newBattle();
 		}
-		
-		if(MtxEngine.getEngine().getKeyboard().keyPressed(GLFW.GLFW_KEY_A))
-		{
-			this.player.setXInverted(true);
-			this.player.getPhysicBody().addForce(-speed, 0);
-			this.player.getAnimationList().get(0).setRunning(true);
-			moved = true;
-		}
-		
-		if(MtxEngine.getEngine().getKeyboard().keyPressed(GLFW.GLFW_KEY_D))
-		{
-			this.player.setXInverted(false);
-			this.player.getPhysicBody().addForce(speed, 0);
-			this.player.getAnimationList().get(0).setRunning(true);
-			moved = true;
-		}
-		
-		if(MtxEngine.getEngine().getKeyboard().keyPressed(GLFW.GLFW_KEY_SPACE) && this.shootTimer >= 1000)
-		{
-			Vector2f direction = new Vector2f(1, 0);
-			SlimeBall slimeBall = this.player.shoot(direction);
-			this.addObject(slimeBall);
-			this.shootTimer = 0;
-		}
-		
-		if(moved == false) this.player.getAnimationList().get(0).breakAnimation();
+	}
+	
+	@Override
+	public void OnUnload(MtxLevel level) {}
+	
+	public void newBattle()
+	{
+		this.firstPlayer.spawn();
+		this.secondPlayer.spawn();
+	}
+	
+	public MtxText getFirstPlayerScoreText() 
+	{
+		return firstPlayerScoreText;
+	}
+	
+	public MtxText getSecondPlayerScoreText() 
+	{
+		return secondPlayerScoreText;
 	}
 
 }
